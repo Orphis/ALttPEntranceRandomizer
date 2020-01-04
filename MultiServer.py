@@ -11,6 +11,7 @@ import websockets
 
 import Items
 import Regions
+from MultiWorld import MultiWorld
 from MultiClient import ReceivedItem, get_item_name_from_id, get_location_name_from_address
 
 class Client:
@@ -21,12 +22,6 @@ class Client:
         self.team = None
         self.slot = None
         self.send_index = 0
-
-class MultiWorld:
-    def __init__(self):
-        self.players = None
-        self.rom_names = {}
-        self.locations = {}
 
 class Context:
     def __init__(self, host, port, password):
@@ -175,8 +170,8 @@ def forfeit_player(ctx : Context, team, slot, name):
 def register_location_checks(ctx : Context, name, team, slot, locations):
     found_items = False
     for location in locations:
-        if (location, slot) in ctx.world.locations:
-            target_item, target_player = ctx.world.locations[(location, slot)]
+        if slot in ctx.world.locations and location in ctx.world.locations[slot]:
+            target_item, target_player = ctx.world.locations[slot][location]
             if target_player != slot:
                 found = False
                 recvd_items = get_received_items(ctx, team, target_player)
@@ -357,8 +352,7 @@ async def main():
             root.withdraw()
             ctx.data_filename = tkinter.filedialog.askopenfilename(filetypes=(("Multiworld data","*multidata"),))
 
-        with open(ctx.data_filename, 'rb') as f:
-            ctx.world = pickle.load(f)
+        ctx.world = MultiWorld.load(ctx.data_filename)
     except Exception as e:
         print('Failed to read multiworld data (%s)' % e)
         return

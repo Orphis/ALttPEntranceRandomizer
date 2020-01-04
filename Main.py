@@ -142,7 +142,7 @@ def main(args, seed=None):
 
     jsonout = {}
     if not args.suppress_rom:
-        from MultiServer import MultiWorld
+        from MultiWorld import MultiWorld
         multidata = MultiWorld()
         multidata.players = world.players
 
@@ -169,7 +169,7 @@ def main(args, seed=None):
             multidata.rom_names[player] = list(rom.name)
             for location in world.get_filled_locations(player):
                 if type(location.address) is int:
-                    multidata.locations[(location.address, player)] = (location.item.code, location.item.player)
+                    multidata.locations.setdefault(player, dict())[location.address] = [location.item.code, location.item.player]
 
             if args.jsonout:
                 jsonout[f'patch{player}'] = rom.patches
@@ -208,8 +208,7 @@ def main(args, seed=None):
                                                                           "-nohints" if not world.hints[player] else "")) if not args.outputname else ''
                 rom.write_to_file(output_path(f'{outfilebase}{playername}{outfilesuffix}.sfc'))
 
-        with open(output_path('%s_multidata' % outfilebase), 'wb') as f:
-            pickle.dump(multidata, f, pickle.HIGHEST_PROTOCOL)
+        multidata.write(output_path('%s_multidata' % outfilebase))
 
     if args.create_spoiler and not args.jsonout:
         world.spoiler.to_file(output_path('%s_Spoiler.txt' % outfilebase))
